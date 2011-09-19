@@ -12,13 +12,12 @@ gem "activesupport"
 
 group :development do
   gem "rdoc"
-  gem "rspec", "~> 2.6.0"
   gem "bundler", "~> 1.0.0"
   gem "jeweler", "~> 1.6.4"
-  gem "rcov", ">= 0"
 end
 
-group :test do
+group :test, :development do
+  gem "ruby-debug"
   gem "rspec", "~> 2.6.0"
   gem "rcov", ">= 0"
   gem "em-spec", :git => "/Users/cbuxton/work/em-spec-cpb/.git"
