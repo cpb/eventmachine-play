@@ -112,4 +112,47 @@ describe "Simple Demos" do
       end
     end
   end
+
+  context "EM::Channel" do
+    let(:channel) { EM::Channel.new }
+
+    before(:each) do
+      @calls = 0
+    end
+
+    it "should allow subscribers" do
+      em do
+        channel.subscribe { |arg|
+          arg.should eql([1,2])
+          @calls += 1
+        }
+
+        channel.subscribe do |arg|
+          @calls += 1
+          done
+        end
+
+        channel.push([1,2])
+      end
+      @calls.should eql(2)
+    end
+
+    it "should allow unsubscription" do
+      em do
+        channel.subscribe do |arg|
+          @calls += 1
+        end
+
+        subscriber = channel.subscribe do |arg|
+          fail("Should not be called")
+        end
+
+        channel.unsubscribe(subscriber)
+        channel.push([1,2])
+        done
+      end
+
+      @calls.should eql(1)
+    end
+  end
 end
