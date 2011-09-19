@@ -155,4 +155,89 @@ describe "Simple Demos" do
       @calls.should eql(1)
     end
   end
+
+  context "EM::Callback" do
+    def handler(*args, &block)
+      EM::Callback(*args, &block)
+    end
+
+    def responder(one,two)
+      @responder_calls += 1
+      @responder_args.push([one,two])
+    end
+
+    let(:responder_block) { proc { |one,two|
+      @responder_block_calls += 1
+      @responder_block_args.push([one,two])
+    } }
+
+    let(:responder_object) do
+      Class.new do
+        attr_reader :calls,:args
+
+        def initialize
+          @calls = 0
+          @args = []
+        end
+
+        def responder(one,two)
+          @calls += 1
+          @args.push([one,two])
+        end
+      end.new
+    end
+
+    before(:each) do
+      @responder_calls = 0
+      @responder_args = []
+      @responder_block_calls = 0
+      @responder_block_args = []
+    end
+
+    it "should accept a call-able block" do
+      calls = 0
+      args = []
+
+      callable = handler do |one,two|
+        calls += 1
+        args.push([one,two])
+      end
+
+      expect {
+        callable.call(1,2)
+      }.to change { calls }.by(1)
+
+      args.first.should eql([1,2])
+    end
+
+    it "should accept a proc" do
+      callable = handler(responder_block)
+
+      expect {
+        callable.call(1,2)
+      }.to change { @responder_block_calls }.by(1)
+
+      @responder_block_args.first.should eql([1,2])
+    end
+
+    it "should accept a method object" do
+      callable = handler(method(:responder))
+
+      expect {
+        callable.call(1,2)
+      }.to change { @responder_calls }.by(1)
+
+      @responder_args.first.should eql([1,2])
+    end
+
+    it "should accept an object's method" do
+      callable = handler(responder_object.method(:responder))
+
+      expect {
+        callable.call(1,2)
+      }.to change { responder_object.calls }.by(1)
+
+      responder_object.args.first.should eql([1,2])
+    end
+  end
 end
