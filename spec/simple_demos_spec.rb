@@ -1,6 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
-describe "EventmachinePlay simple demos" do
+describe "Simple Demos" do
   include EM::Spec
 
   it "EM.add_timer(0.5) should add a timer which executes in about half a second" do
