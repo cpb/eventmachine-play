@@ -7,6 +7,7 @@ source "http://rubygems.org"
 # Include everything needed to run rake, tests, features, etc.
 
 gem "eventmachine"
+gem "yajl-ruby"
 
 group :development do
   gem "rdoc"
