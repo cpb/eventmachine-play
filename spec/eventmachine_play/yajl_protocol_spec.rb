@@ -1,10 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 require "eventmachine_play/yajl_protocol"
 
-class ExampleClient
-  include ::EventmachinePlay::YajlProtocol
-end
-
 class JsonAble < Struct.new(:id, :name)
   def to_json
     Yajl::Encoder.encode({:id => id, :name => name})
@@ -18,7 +14,9 @@ describe EventmachinePlay::YajlProtocol do
     [message.bytesize, message].pack('Na*')
   end
 
-  let(:example_client) { ExampleClient.new }
+  let(:example_client) do
+    Class.new { include ::EventmachinePlay::YajlProtocol }.new
+  end
 
   context "receiving json" do
     let(:data) { pack_message('{"foobar": "snacks"}') }
@@ -39,41 +37,36 @@ describe EventmachinePlay::YajlProtocol do
   context "between a client and server" do
     include EventMachine::SpecHelper
 
-    it "should be able to send objects which respond to to_json" do
-      module Server
+    let(:socket) { in_temporary_path("yajl_socket").to_s }
+    let(:client) do
+      Class.new(EventMachine::Connection) do
         include ::EventmachinePlay::YajlProtocol
+      end
+    end
 
+    let(:server) do
+      Class.new(EventMachine::Connection) do
+        include ::EventmachinePlay::YajlProtocol
+      end
+    end
+
+    it "should be able to send objects which respond to to_json" do
+      server.class_eval do
         def post_init
-          puts "server received connection"
           send_object(JsonAble.new(1,:caleb))
         end
       end
 
-      module Client
-        include ::EventmachinePlay::YajlProtocol
 
-        def initialize(example, expectation_block)
-          @example = example
-          @expectation_block = expectation_block
-        end
-
-        def post_init
-          puts "client connected"
-        end
-
-        def receive_object(object)
-          @expectation_block.call(object)
-          #EM.stop_event_loop
-          @example.done
-        end
+      client.any_instance.should_receive(:receive_object) do |object|
+        object.should include("id" => 1, "name" => "caleb")
+        done
       end
 
       em do
-        EM.start_server("127.0.0.1",4000, Server)
+        EM.start_server(socket, server)
 
-        EM.connect("127.0.0.1",4000, Client,self,proc { |object|
-          object.should include("id" => 1, "name" => "caleb")
-        })
+        EM.connect(socket, client)
       end
     end
   end
