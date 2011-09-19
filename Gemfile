@@ -8,6 +8,7 @@ source "http://rubygems.org"
 
 gem "eventmachine"
 gem "yajl-ruby"
+gem "activesupport"
 
 group :development do
   gem "rdoc"
