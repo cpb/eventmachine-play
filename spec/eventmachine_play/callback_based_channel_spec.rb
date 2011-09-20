@@ -82,6 +82,5 @@ describe EventmachinePlay::CallbackBasedChannel do
       channel.push([1,2])
     end
     @calls.should eql(2)
-
   end
 end
