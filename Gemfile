@@ -20,5 +20,5 @@ group :test, :development do
   gem "ruby-debug"
   gem "rspec", "~> 2.6.0"
   gem "rcov", ">= 0"
-  gem "em-spec", :git => "/Users/cbuxton/work/em-spec-cpb/.git"
+  gem "em-spec", :git => "git@github.com:cpb/em-spec.git"
 end
