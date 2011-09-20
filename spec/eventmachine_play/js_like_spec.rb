@@ -22,9 +22,58 @@ describe EventmachinePlay::JsLike do
       example_emitter.send(:make_callback,nil,nil,callme).should eql(example_emitter.send(:make_callback,nil,nil,callme))
     end
   end
-  context "adding events" do
 
-    it "allow you to to add events" do
+  context "trigger event" do
+    it "only triggers responders for the triggered event" do
+      dog_catcher.should_not_receive(:heard_something).with(1,2)
+
+      em do
+        example_emitter.add_event(:bark, dog_catcher, :heard_something)
+
+        example_emitter.add_event(:meow) do |*args|
+          done
+        end
+
+        example_emitter.trigger_event(:meow,"quietly")
+      end
+    end
+
+    it "only triggers a responder as many times as event is triggered" do
+      dog_catcher.should_receive(:heard_something).with(anything()).exactly(3).times
+
+      calls = 0
+      em do
+        example_emitter.add_event(:bark, dog_catcher, :heard_something)
+        example_emitter.add_event(:bark) do |*args|
+          done if (calls += 1) >= 3
+        end
+        example_emitter.trigger_event(:bark,:something)
+        example_emitter.trigger_event(:bark,:something)
+        example_emitter.trigger_event(:bark,:something)
+      end
+    end
+  end
+
+  context "removing events" do
+    it "will no longer have the responders triggered by the event" do
+      dog_catcher.should_not_receive(:heard_something).with(1,2)
+
+      em do
+        example_emitter.add_event(:meow, dog_catcher, :heard_something)
+
+        example_emitter.add_event(:meow) do |*args|
+          done
+        end
+
+        example_emitter.remove_event(:meow, dog_catcher, :heard_something)
+
+        example_emitter.trigger_event(:meow,"quietly")
+      end
+    end
+  end
+
+  context "adding events" do
+    it "will have the responders triggered with arguments" do
       calls = 0
       args = []
 
@@ -41,7 +90,7 @@ describe EventmachinePlay::JsLike do
       args.first.should eql([1,2])
     end
 
-    it "allows you to add multiple responders" do
+    it "called multiple times will add multiple responders" do
       calls = 0
 
       dog_catcher.should_receive(:heard_something).with(1,2).once
@@ -63,17 +112,16 @@ describe EventmachinePlay::JsLike do
       calls.should eql(1)
     end
 
-    it "only triggers the event's responders" do
-      dog_catcher.should_not_receive(:heard_something).with(1,2)
+    it "called multiple times with the same responder, only adds it once" do
+      dog_catcher.should_receive(:heard_something).with(1,2).once
 
       em do
         example_emitter.add_event(:bark, dog_catcher, :heard_something)
-
-        example_emitter.add_event(:meow) do |*args|
+        example_emitter.add_event(:bark, dog_catcher, :heard_something)
+        example_emitter.add_event(:bark) do |*args|
           done
         end
-
-        example_emitter.trigger_event(:meow,"quietly")
+        example_emitter.trigger_event(:bark,1,2)
       end
     end
   end
